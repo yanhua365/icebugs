@@ -15,13 +15,17 @@ def modules = prj.getModules();
 Findbugs findbugs = new Findbugs(FINDBUGS_HOME, REPORT_DIR)
 Subversion subversion = new Subversion(SUBVERSION_HOME, REPORT_DIR)
 
+def changedModules = []
 modules.each{m ->
-    subversion.diff(m)
+    def diff = subversion.diff(m)
+    if(diff!=null && !"".equals(diff.trim())){
+        changedModules << m
+        println diff
+        //TODO 得到文件变化的行
+    }
 }
 
-//TODO 检查一下是否有变化，过滤出有变化的module给下面的findbugs用
-
-modules.each{m ->
+changedModules.each{m ->
     findbugs.check(m)
 }
 
@@ -72,6 +76,7 @@ class Project{
 class Module{
     String name
     Project project
+    List changedLines = []
 
     Module(project, name){
         this.name = name
@@ -100,14 +105,14 @@ class Subversion{
     }
 
     def diff(Module module){
-//        String c = new String(home +File.separator+"bin"+File.separator+"svn.exe diff --xml --summarize "+ module.getSrcDirPath() + ">" + outputDir + File.separator + module.getSvnOutputFileName())
+        //String c = new String(home +File.separator+"bin"+File.separator+"svn.exe diff --xml --summarize "+ module.getSrcDirPath() + ">" + outputDir + File.separator + module.getSvnOutputFileName())
         String c = new String(home +File.separator+"bin"+File.separator+"svn diff "+ module.getSrcDirPath())
         println(c)
         Process p = c.execute()
 
         def outputStream = new StringBuffer();
         p.waitForProcessOutput(outputStream, System.err)
-        println "${outputStream}"
+        return "${outputStream}"
     }
 }
 
